@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Notas mágica</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{
+  --bg:#000;
+  --bg-panel:#111111;
+  --bg-panel-2:#18181a;
+  --border-soft:#26262a;
+  --border-strong:#333339;
+  --accent:#ffd60a;
+  --accent-soft:rgba(255,214,10,0.18);
+  --text:#f5f5f7;
+  --text-muted:#8e8e93;
+  --radius:18px;
+  --shadow:0 0 0 1px rgba(255,255,255,0.02), 0 18px 40px rgba(0,0,0,0.8);
+  --blur:26px;
+  --transition:0.18s ease;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  background:#000;
+  color:var(--text);
+}
+.app{
+  min-height:100vh;
+  display:flex;
+  background:radial-gradient(circle at 0 0,#20202a 0,#000 45%);
+  color:var(--text);
+}
+.sidebar{
+  width:26%;
+  max-width:320px;
+  min-width:220px;
+  border-right:1px solid var(--border-soft);
+  background:rgba(10,10,12,0.92);
+  backdrop-filter:blur(var(--blur));
+  -webkit-backdrop-filter:blur(var(--blur));
+  display:flex;
+  flex-direction:column;
+}
+.notes-panel{
+  width:28%;
+  border-right:1px solid var(--border-soft);
+  background:rgba(12,12,14,0.92);
+  backdrop-filter:blur(var(--blur));
+  -webkit-backdrop-filter:blur(var(--blur));
+  display:flex;
+  flex-direction:column;
+}
+.editor-panel{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  background:radial-gradient(circle at 0 0,#181820 0,#050506 55%);
+}
+.header{
+  padding:10px 14px 6px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.header-title-main{
+  font-size:22px;
+  font-weight:650;
+  color:#fdfdfd;
+}
+.header-sub{
+  font-size:13px;
+  color:var(--text-muted);
+  margin-top:2px;
+}
+.search-wrapper{
+  padding:4px 10px 8px;
+}
+.search{
+  width:100%;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.08);
+  background:rgba(30,30,34,0.9);
+  color:var(--text);
+  padding:6px 12px;
+  font-size:13px;
+  outline:none;
+}
+.search::placeholder{color:var(--text-muted);}
+.section-title{
+  font-size:12px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  color:var(--text-muted);
+  padding:4px 14px;
+}
+.folder-list, .note-list{
+  flex:1;
+  overflow-y:auto;
+  padding:4px 4px 10px;
+}
+.folder-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:6px 11px;
+  border-radius:12px;
+  cursor:pointer;
+  transition:background var(--transition);
+}
+.folder-item:hover{
+  background:rgba(255,255,255,0.04);
+}
+.folder-item.active{
+  background:rgba(255,255,255,0.12);
+}
+.folder-name{
+  font-size:14px;
+}
+.folder-count{
+  font-size:12px;
+  color:var(--text-muted);
+}
+.note-item{
+  padding:7px 10px;
+  border-radius:12px;
+  cursor:pointer;
+  transition:background var(--transition);
+}
+.note-item:hover{
+  background:rgba(255,255,255,0.04);
+}
+.note-item.active{
+  background:rgba(255,255,255,0.16);
+}
+.note-title{
+  font-size:14px;
+  font-weight:500;
+}
+.note-meta{
+  font-size:11px;
+  color:var(--text-muted);
+  margin-top:2px;
+}
+.editor-header{
+  padding:10px 16px 6px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.editor-title{
+  font-size:17px;
+  font-weight:600;
+}
+.icon-btn{
+  background:transparent;
+  border:none;
+  color:var(--text-muted);
+  font-size:18px;
+  padding:4px;
+  cursor:pointer;
+}
+.icon-btn:active{transform:scale(.94);}
+.editor-area{
+  flex:1;
+  padding:0 16px 16px;
+  display:flex;
+}
+.editor-textarea{
+  width:100%;
+  resize:none;
+  border:none;
+  outline:none;
+  border-radius:18px;
+  padding:14px 14px 80px;
+  font-size:15px;
+  line-height:1.5;
+  background:rgba(10,10,10,0.95);
+  color:var(--text);
+  box-shadow:var(--shadow);
+}
+.editor-textarea::placeholder{color:var(--text-muted);}
+.fab-new-note{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  width:46px;
+  height:46px;
+  border-radius:999px;
+  border:none;
+  cursor:pointer;
+  background:linear-gradient(145deg,#2f2f33,#111113);
+  box-shadow:0 18px 40px rgba(0,0,0,0.9);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--accent);
+  font-size:24px;
+}
+.fab-new-note span{
+  position:relative;
+  top:-1px;
+}
+.fab-folder{
+  position:fixed;
+  left:18px;
+  bottom:18px;
+  width:40px;
+  height:40px;
+  border-radius:999px;
+  border:none;
+  cursor:pointer;
+  background:rgba(20,20,24,0.96);
+  box-shadow:0 16px 30px rgba(0,0,0,0.8);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text-muted);
+  font-size:20px;
+}
+.hidden{display:none;}
+.build-badge{display:none;
+  position:fixed; left:10px; top:8px; z-index:1000;
+  font-size:11px; padding:3px 6px; border-radius:8px;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+  color:var(--text-muted); backdrop-filter:blur(10px);
+  letter-spacing:.3px;
+}
+.secret-indicator{
+  position:fixed; right:10px; top:10px; width:9px; height:9px;
+  border-radius:999px; background:var(--accent);
+  box-shadow:0 0 10px rgba(255,214,10,0.9);
+  opacity:0; transition:opacity .15s ease;
+}
+.secret-on .secret-indicator{opacity:1;}
+.digit-panel{
+  position:fixed;
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+.digit-counter{
+  min-width:36px;
+  text-align:center;
+  font-size:13px;
+  padding:2px 8px;
+  border-radius:10px;
+  background:rgba(15,15,18,0.96);
+  border:1px solid rgba(255,255,255,0.16);
+  color:var(--accent);
+}
+.digit-buttons{
+  display:flex;
+  gap:6px;
+}
+.digit-btn{
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.16);
+  background:rgba(20,20,24,0.96);
+  color:var(--text);
+  font-size:13px;
+  cursor:pointer;
+}
+.digit-btn-ok{
+  width:46px;
+}
+.toast{
+  position:fixed;left:50%;top:60px;transform:translateX(-50%);
+  padding:7px 12px;
+  border-radius:999px;
+  background:rgba(20,20,22,0.96);
+  border:1px solid rgba(255,255,255,0.18);
+  font-size:13px;
+  z-index:2000;
+}
+@media (max-width:900px){
+  .sidebar{width:34%;}
+  .notes-panel{width:33%;}
+}
+@media (max-width:700px){
+  .sidebar{display:none;}
+  .notes-panel{width:40%;}
+}
+@media (max-width:540px){
+  .app{flex-direction:column;}
+  .sidebar{display:block; width:100%; max-width:none; border-right:none; border-bottom:1px solid var(--border-soft);}
+  .notes-panel{width:100%; border-right:none; border-bottom:1px solid var(--border-soft);}
+}
+</style>
+</head>
+<body>
+<div class="build-badge">v38-magic</div>
+<div class="secret-indicator" id="secretDot"></div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="header">
+      <div>
+        <div class="header-title-main" id="bigFoldersTitle">Carpetas</div>
+        <div class="header-sub">iCloud y en mi iPhone</div>
+      </div>
+    </div>
+    <div class="search-wrapper">
+      <input id="foldersSearch" class="search" placeholder="Buscar en carpetas" autocomplete="off">
+    </div>
+    <div class="section-title">ICLOUD</div>
+    <div class="folder-list" id="folderList"></div>
+  </aside>
+
+  <section class="notes-panel">
+    <div class="header">
+      <div>
+        <div class="header-title-main" id="folderTitle">Notas</div>
+        <div class="header-sub" id="folderSubtitle">0 notas</div>
+      </div>
+    </div>
+    <div class="search-wrapper">
+      <input id="notesSearch" class="search" placeholder="Buscar en notas" autocomplete="off">
+    </div>
+    <div class="note-list" id="noteList"></div>
+  </section>
+
+  <section class="editor-panel">
+    <div class="editor-header">
+      <div class="editor-title" id="noteTitleLabel">Sin nota seleccionada</div>
+      <div>
+        <button class="icon-btn" id="deleteNoteBtn" title="Eliminar nota">🗑️</button>
+      </div>
+    </div>
+    <div class="editor-area">
+      <textarea id="noteBody" class="editor-textarea" placeholder="Empieza a escribir..."></textarea>
+    </div>
+  </section>
+</div>
+
+<button class="fab-folder" id="folderFab" title="Carpetas">🗂</button>
+<button class="fab-new-note" id="newNoteFab" title="Nueva nota">
+  <span>✎</span>
+</button>
+
+<div class="digit-panel hidden" id="digitPanel">
+  <div class="digit-counter" id="digitCounter">0</div>
+  <div class="digit-buttons">
+    <button class="digit-btn" id="btnPlus10">+10</button>
+    <button class="digit-btn" id="btnPlus1">+1</button>
+    <button class="digit-btn digit-btn-ok" id="btnOk">OK</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = "notas_magic_v38";
+let folders = [];
+let notes = [];
+let activeFolderId = null;
+let activeNoteId = null;
+
+// --- SECRET / DFB ---
+let secretMode = false;
+let longPressTimer = null;
+let pendingNumber = null;
+let numberDebounce = null;
+let tapNumber = 0;
+let digitPanelVisible = false;
+
+// elements
+const folderListEl = document.getElementById("folderList");
+const noteListEl = document.getElementById("noteList");
+const foldersSearchEl = document.getElementById("foldersSearch");
+const notesSearchEl = document.getElementById("notesSearch");
+const folderTitleEl = document.getElementById("folderTitle");
+const folderSubtitleEl = document.getElementById("folderSubtitle");
+const noteTitleLabelEl = document.getElementById("noteTitleLabel");
+const noteBodyEl = document.getElementById("noteBody");
+const bigFoldersTitleEl = document.getElementById("bigFoldersTitle");
+const deleteNoteBtn = document.getElementById("deleteNoteBtn");
+const newNoteFab = document.getElementById("newNoteFab");
+const digitPanelEl = document.getElementById("digitPanel");
+const digitCounterEl = document.getElementById("digitCounter");
+const btnPlus10 = document.getElementById("btnPlus10");
+const btnPlus1 = document.getElementById("btnPlus1");
+const btnOk = document.getElementById("btnOk");
+
+function showToast(msg){
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 1100);
+}
+
+function setSecret(on){
+  secretMode = on;
+  document.body.classList.toggle("secret-on", on);
+  if(!on){
+    tapNumber = 0;
+    updateDigitDisplay();
+    hideDigitPanel();
+  }
+  showToast(on ? "Modo secreto ON" : "Modo secreto OFF");
+}
+
+function nowTs(){ return Date.now(); }
+
+function save(){
+  const data = { folders, notes };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function load(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){
+    try{
+      const data = JSON.parse(raw);
+      folders = data.folders || [];
+      notes = data.notes || [];
+      if(folders.length && notes.length) return;
+    }catch(e){}
+  }
+  seed();
+}
+
+function padTo100(arr){
+  const out = [];
+  let idx = 0;
+  while(out.length < 100){
+    out.push(arr[idx % arr.length]);
+    idx++;
+  }
+  return out;
+}
+
+function makeList(title, items){
+  const lines = [title, ""];
+  items.forEach((txt,i)=>{
+    lines.push((i+1)+" "+txt);
+    lines.push("");
+  });
+  return lines.join("\n");
+}
+
+function seed(){
+  const baseCars = [
+    "Mercedes-AMG CLA 45",
+    "Mercedes C63 AMG",
+    "BMW M3",
+    "BMW M4",
+    "Audi RS4",
+    "Audi RS6",
+    "Porsche 911 Turbo",
+    "Nissan GT-R",
+    "Toyota Supra",
+    "Honda NSX"
+  ];
+  const cars100 = padTo100(baseCars);
+
+  const baseSongs = [
+    "Blinding Lights — The Weeknd",
+    "Shape of You — Ed Sheeran",
+    "Bohemian Rhapsody — Queen",
+    "Someone Like You — Adele",
+    "Bad Guy — Billie Eilish",
+    "Shallow — Lady Gaga",
+    "Viva la Vida — Coldplay",
+    "Beat It — Michael Jackson",
+    "Rolling in the Deep — Adele",
+    "Uptown Funk — Mark Ronson"
+  ];
+  const songs100 = padTo100(baseSongs);
+
+  const baseCountries = [
+    "España","Francia","Italia","Alemania","Portugal",
+    "Reino Unido","Estados Unidos","México","Brasil","Japón"
+  ];
+  const countries100 = padTo100(baseCountries);
+
+  const baseCities = [
+    "París","Madrid","Roma","Berlín","Londres",
+    "Lisboa","Nueva York","Tokio","Seúl","Sidney"
+  ];
+  const cities100 = padTo100(baseCities);
+
+  const baseMagic = ["Predicción en notas","Forzaje de canción","NFC revelación","Carta al teléfono","Doble realidad",
+    "Pensamiento de palabra","Rutina con monedas","Cambio de color","Ambiciosa","Triumph",
+    "ACAAN","Invisible Deck","Billete a limón","Anillo a cuerda","Top change",
+    "Double lift","Palm","Faro","Out of this world","Oil & Water"];
+  const magic100 = padTo100(baseMagic);
+
+  const baseGroceries = ["Leche","Huevos","Pan","Aceite de oliva","Café","Azúcar","Sal","Arroz","Pasta","Tomate frito",
+    "Atún","Pollo","Verduras","Fruta","Yogures","Queso","Agua","Detergente","Papel cocina","Jamón"];
+  const groceries100 = padTo100(baseGroceries);
+
+  const baseEngines = ["OM642 3.0 V6 diésel","OM651 2.1 diésel","M274 2.0 gasolina","M276 3.5 V6 gasolina","M157 5.5 V8 biturbo",
+    "M139 2.0 AMG","OM656 3.0 diésel","M256 3.0 6L mild‑hybrid","M177 4.0 V8 biturbo","M133 2.0 AMG",
+    "OM654 2.0 diésel","M278 4.7 V8 biturbo","M272 3.5 V6","M271 1.8 Kompressor","OM628 4.0 V8 diésel",
+    "M112 3.2 V6","M113 5.0 V8","OM606 3.0 diésel","M104 3.2 6L","M120 6.0 V12"];
+  const engines100 = padTo100(baseEngines);
+
+  folders = [
+    {id:"f-icloud-musica", name:"Música", location:"icloud"},
+    {id:"f-icloud-coches", name:"Coches", location:"icloud"},
+    {id:"f-icloud-paises", name:"Países", location:"icloud"},
+    {id:"f-icloud-ciudades", name:"Ciudades", location:"icloud"},
+    {id:"f-icloud-magia", name:"Magia", location:"icloud"},
+    {id:"f-icloud-compra", name:"Lista compra", location:"icloud"},
+    {id:"f-icloud-motores", name:"Motores Mercedes", location:"icloud"}
+  ];
+  notes = [
+    {id:"n-1", folderId:"f-icloud-musica", title:"Canciones", body:makeList("Canciones", songs100), updatedAt: nowTs()},
+    {id:"n-2", folderId:"f-icloud-coches", title:"Coches", body:makeList("Coches", cars100), updatedAt: nowTs()},
+    {id:"n-3", folderId:"f-icloud-paises", title:"Países", body:makeList("Países", countries100), updatedAt: nowTs()},
+    {id:"n-4", folderId:"f-icloud-ciudades", title:"Ciudades", body:makeList("Ciudades", cities100), updatedAt: nowTs()},
+    {id:"n-5", folderId:"f-icloud-magia", title:"Trucos de magia", body:makeList("Trucos de magia", magic100), updatedAt: nowTs()},
+    {id:"n-6", folderId:"f-icloud-compra", title:"Lista de la compra", body:makeList("Lista de la compra", groceries100), updatedAt: nowTs()},
+    {id:"n-7", folderId:"f-icloud-motores", title:"Motores Mercedes", body:makeList("Motores Mercedes", engines100), updatedAt: nowTs()}
+  ];
+  activeFolderId = "f-icloud-musica";
+  activeNoteId = "n-1";
+  save();
+}
+
+function resetAll(){
+  seed();
+  renderFolders();
+  renderNotes();
+  renderEditor();
+  showToast("Listas reseteadas");
+}
+
+function getActiveFolder(){
+  return folders.find(f=>f.id===activeFolderId) || folders[0] || null;
+}
+function getActiveNote(){
+  return notes.find(n=>n.id===activeNoteId) || null;
+}
+
+function countNotes(folderId){
+  return notes.filter(n=>n.folderId===folderId).length;
+}
+
+function renderFolders(){
+  const q = foldersSearchEl.value.trim().toLowerCase();
+  folderListEl.innerHTML = "";
+  folders.forEach(f=>{
+    if(q && !f.name.toLowerCase().includes(q)) return;
+    const div = document.createElement("div");
+    div.className = "folder-item"+(f.id===activeFolderId?" active":"");
+    const left = document.createElement("div");
+    left.className="folder-name";
+    left.textContent = f.name;
+    const right = document.createElement("div");
+    right.className="folder-count";
+    right.textContent = countNotes(f.id);
+    div.appendChild(left);
+    div.appendChild(right);
+    div.addEventListener("click", ()=>{
+      activeFolderId = f.id;
+      activeNoteId = null;
+      renderFolders();
+      renderNotes();
+      renderEditor();
+    });
+    folderListEl.appendChild(div);
+  });
+  const af = getActiveFolder();
+  if(af){
+    folderTitleEl.textContent = af.name;
+    folderSubtitleEl.textContent = countNotes(af.id)+" notas";
+  }else{
+    folderTitleEl.textContent = "Notas";
+    folderSubtitleEl.textContent = "0 notas";
+  }
+}
+
+function renderNotes(){
+  const folder = getActiveFolder();
+  noteListEl.innerHTML = "";
+  if(!folder){ return; }
+  const q = notesSearchEl.value.trim().toLowerCase();
+  const list = notes
+    .filter(n=>n.folderId===folder.id)
+    .sort((a,b)=>b.updatedAt - a.updatedAt);
+  list.forEach(n=>{
+    if(q){
+      const bodyLower = n.body.toLowerCase();
+      if(!n.title.toLowerCase().includes(q) && !bodyLower.includes(q)) return;
+    }
+    const div = document.createElement("div");
+    div.className = "note-item"+(n.id===activeNoteId?" active":"");
+    const t = document.createElement("div");
+    t.className = "note-title";
+    t.textContent = n.title;
+    const meta = document.createElement("div");
+    meta.className = "note-meta";
+    meta.textContent = new Date(n.updatedAt).toLocaleDateString("es-ES",{day:"2-digit",month:"short"});
+    div.appendChild(t);
+    div.appendChild(meta);
+
+    // long-press for secret force
+    div.addEventListener("touchstart",(ev)=>{
+      if(!secretMode) return;
+      longPressTimer = setTimeout(()=>{
+        const full = n.body;
+        const lines = full.split("\n").map(l=>l.trim()).filter(Boolean);
+        const numbered = lines.find(l=>/^\d+\s/.test(l));
+        const forced = numbered ? numbered.replace(/^\d+\s+/, "").trim() : (lines[1] || n.title);
+        n.force = { item: forced };
+        save();
+        activeNoteId = n.id;
+        applyForceIfReady();
+        renderNotes();
+        renderEditor();
+        showToast("Ítem forzado listo");
+      },500);
+    },{passive:true});
+    div.addEventListener("touchend",()=>{
+      if(longPressTimer){clearTimeout(longPressTimer); longPressTimer=null;}
+    },{passive:true});
+    div.addEventListener("touchmove",()=>{
+      if(longPressTimer){clearTimeout(longPressTimer); longPressTimer=null;}
+    },{passive:true});
+
+    div.addEventListener("click", ()=>{
+      activeNoteId = n.id;
+      renderNotes();
+      renderEditor();
+    });
+
+    noteListEl.appendChild(div);
+  });
+}
+
+function renderEditor(){
+  const n = getActiveNote();
+  if(!n){
+    noteTitleLabelEl.textContent = "Sin nota seleccionada";
+    noteBodyEl.value = "";
+    return;
+  }
+  noteTitleLabelEl.textContent = n.title;
+  noteBodyEl.value = n.body;
+}
+
+noteBodyEl.addEventListener("input", ()=>{
+  const n = getActiveNote();
+  if(!n) return;
+  n.body = noteBodyEl.value;
+  n.updatedAt = nowTs();
+  save();
+  renderNotes();
+});
+
+deleteNoteBtn.addEventListener("click", ()=>{
+  const n = getActiveNote();
+  if(!n) return;
+  if(!confirm("¿Eliminar esta nota?")) return;
+  notes = notes.filter(x=>x.id!==n.id);
+  activeNoteId = null;
+  save();
+  renderNotes();
+  renderEditor();
+});
+
+newNoteFab.addEventListener("click", ()=>{
+  const folder = getActiveFolder();
+  if(!folder) return;
+  const id = "n-"+Math.random().toString(36).slice(2,9);
+  const n = {id, folderId:folder.id, title:"Nueva nota", body:"Nueva nota", updatedAt:nowTs()};
+  notes.push(n);
+  activeNoteId = id;
+  save();
+  renderNotes();
+  renderEditor();
+});
+
+// --- Secret gestures & inputs ---
+
+// long-press on "Carpetas" title to toggle secret
+bigFoldersTitleEl.addEventListener("touchstart", ()=>{
+  longPressTimer = setTimeout(()=>{
+    setSecret(!secretMode);
+  },550);
+},{passive:true});
+bigFoldersTitleEl.addEventListener("touchend", ()=>{
+  if(longPressTimer){clearTimeout(longPressTimer); longPressTimer=null;}
+},{passive:true});
+bigFoldersTitleEl.addEventListener("touchmove", ()=>{
+  if(longPressTimer){clearTimeout(longPressTimer); longPressTimer=null;}
+},{passive:true});
+
+
+function updateDigitDisplay(){
+  digitCounterEl.textContent = tapNumber;
+}
+function hideDigitPanel(){
+  digitPanelVisible = false;
+  digitPanelEl.classList.add("hidden");
+}
+function showDigitPanel(){
+  digitPanelVisible = true;
+  digitPanelEl.classList.remove("hidden");
+}
+function toggleDigitPanel(){
+  if(digitPanelVisible){ hideDigitPanel(); } else { showDigitPanel(); }
+}
+
+// /p, /reset, /v and numbers in search
+function handleSearchInput(el){
+  const val = el.value.trim();
+  if(val === "/p"){
+    el.value = "";
+    setSecret(!secretMode);
+    renderFolders();
+    renderNotes();
+    return;
+  }
+  if(secretMode && val === "/reset"){
+    el.value = "";
+    resetAll();
+    return;
+  }
+  if(val === "/v"){
+    el.value = "";
+    if(secretMode){
+      toggleDigitPanel();
+      showToast(digitPanelVisible ? "Panel número visible" : "Panel número oculto");
+    }
+    return;
+  }
+  if(val === "/version"){
+    el.value = "";
+    const badge = document.querySelector(".build-badge");
+    if(badge){
+      badge.style.display = (badge.style.display === "none" || !badge.style.display) ? "inline-block" : "none";
+    }
+    return;
+  }
+  if(secretMode){
+    const m = val.match(/\d{1,3}$/);
+    if(m){
+      clearTimeout(numberDebounce);
+      numberDebounce = setTimeout(()=>{
+        pendingNumber = Math.max(1, Math.min(100, parseInt(m[0],10)));
+        el.value = "";
+        applyForceIfReady();
+      }, 320);
+    }
+  }
+}
+
+foldersSearchEl.addEventListener("input", ()=>{
+  handleSearchInput(foldersSearchEl);
+  if(!secretMode) renderFolders();
+});
+notesSearchEl.addEventListener("input", ()=>{
+  handleSearchInput(notesSearchEl);
+  if(!secretMode) renderNotes();
+});
+
+// Digit panel buttons
+btnPlus10.addEventListener("click", ()=>{
+  if(!secretMode) return;
+  tapNumber += 10;
+  if(tapNumber>100) tapNumber=100;
+  updateDigitDisplay();
+});
+btnPlus1.addEventListener("click", ()=>{
+  if(!secretMode) return;
+  tapNumber += 1;
+  if(tapNumber>100) tapNumber=100;
+  updateDigitDisplay();
+});
+btnOk.addEventListener("click", ()=>{
+  if(!secretMode) return;
+  if(tapNumber>0){
+    pendingNumber = Math.max(1, Math.min(100, tapNumber));
+    applyForceIfReady();
+    showToast("Número secreto: "+tapNumber);
+    tapNumber = 0;
+    updateDigitDisplay();
+  }
+});
+
+// apply DFB force
+function applyForceIfReady(){
+  const note = getActiveNote();
+  if(!note || !note.force || pendingNumber==null) return;
+  const full = note.body;
+  const lines = full.split("\n");
+  if(lines.length<3) return;
+  const title = lines[0];
+  const items = [];
+  for(let i=2;i<lines.length;i++){
+    const line = lines[i].trim();
+    if(!line) continue;
+    const m = line.match(/^(\d+)\s+(.+)$/);
+    if(m){
+      items.push(m[2]);
+    }
+  }
+  if(items.length===0) return;
+  const forced = note.force.item;
+  const clean = items.filter(x=>x!==forced);
+  const idx = Math.max(0, Math.min(clean.length, pendingNumber-1));
+  clean.splice(idx,0,forced);
+  const newLines = [title,""];
+  clean.forEach((txt,i)=>{
+    newLines.push((i+1)+" "+txt);
+    newLines.push("");
+  });
+  note.body = newLines.join("\n");
+  note.updatedAt = nowTs();
+  save();
+  renderNotes();
+  renderEditor();
+}
+
+// init
+load();
+renderFolders();
+renderNotes();
+renderEditor();
+updateDigitDisplay();
+</script>
+</body>
+</html>
